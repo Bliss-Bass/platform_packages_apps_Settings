@@ -151,7 +151,7 @@
         <activity android:name=".Settings$NetworkDashboardActivity"
             android:taskAffinity="com.android.settings"
             android:label="@string/network_dashboard_title"
-            android:icon="@drawable/ic_settings_wireless"
+            android:icon="@drawable/ic_settings_network"
             android:parentActivityName="Settings">
             <intent-filter android:priority="1">
                 <action android:name="android.settings.WIRELESS_SETTINGS" />
@@ -371,7 +371,6 @@
         <activity android:name="Settings$ApnSettingsActivity"
                 android:label="@string/apn_settings"
                 android:launchMode="singleTask"
-                android:taskAffinity="com.android.settings"
                 android:configChanges="orientation|keyboardHidden|screenSize"
                 android:parentActivityName="Settings$NetworkDashboardActivity"
                 android:process="com.android.phone">
@@ -432,6 +431,7 @@
 
         <activity android:name=".bluetooth.DevicePickerActivity"
                 android:label="@string/device_picker"
+                android:configChanges="orientation|keyboardHidden|screenSize"
                 android:clearTaskOnLaunch="true">
             <intent-filter>
                 <action android:name="android.bluetooth.devicepicker.action.LAUNCH" />
@@ -1891,6 +1891,12 @@
                 android:exported="true"
                 android:permission="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
 
+        <receiver android:name=".deviceinfo.UsbModeChooserReceiver">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_STATE"/>
+            </intent-filter>
+        </receiver>>
+
         <activity android:name="Settings$ApnEditorActivity"
                 android:configChanges="orientation|keyboardHidden|screenSize"
                 android:label="@string/apn_edit">
@@ -2337,7 +2343,7 @@
                   android:launchMode="singleTop"
                   android:excludeFromRecents="true"
                   android:theme="@style/Theme.CryptKeeper"
-                  android:configChanges="mnc|mcc|keyboard|keyboardHidden|uiMode"
+                  android:configChanges="mnc|mcc|keyboard|keyboardHidden|uiMode|touchscreen"
                   android:windowSoftInputMode="adjustResize"
                   android:screenOrientation="nosensor"
                   android:process=":CryptKeeper">
@@ -2378,11 +2384,11 @@
                 android:label="@string/crypt_keeper_encrypt_title">
             <intent-filter android:priority="1">
                 <action android:name="android.app.action.START_ENCRYPTION" />
-                <category android:name="android.intent.category.DEFAULT" /> />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.DEFAULT" /> />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <meta-data android:name="com.android.settings.FRAGMENT_CLASS"
                 android:value="com.android.settings.CryptKeeperSettings" />
@@ -2509,8 +2515,8 @@
 
         <activity android:name=".nfc.HowItWorks"
                   android:label="@string/nfc_payment_settings_title"
+                  android:excludeFromRecents="true"
                   android:parentActivityName="Settings$PaymentSettingsActivity">
-                  android:excludeFromRecents="true">
         </activity>
 
         <activity android:name=".SmsDefaultDialog"
@@ -2809,6 +2815,8 @@
                 android:value="com.android.settings.category.ia.wireless" />
             <meta-data android:name="com.android.settings.FRAGMENT_CLASS"
                 android:value="com.android.settings.sim.SimSettings" />
+            <meta-data android:name="com.android.settings.summary"
+                android:resource="@string/summary_empty"/>
         </activity>
 
         <activity android:name=".sim.SimPreferenceDialog"
@@ -3028,7 +3036,7 @@
                 <category android:name="android.intent.category.VOICE_LAUNCH" />
             </intent-filter>
             <intent-filter android:priority="60">
-                <action android:name="com.android.settings.action.SETTINGS" />
+                <!--action android:name="com.android.settings.action.SETTINGS" /-->
             </intent-filter>
             <meta-data android:name="com.android.settings.summary"
                        android:resource="@string/summary_empty"/>
@@ -3134,7 +3142,7 @@
             android:label="@string/debug_layout"
             android:icon="@drawable/tile_icon_show_layout"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:enabled="false">
+            android:enabled="true">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
@@ -3144,7 +3152,7 @@
             android:label="@string/track_frame_time"
             android:icon="@drawable/tile_icon_graphics"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:enabled="false">
+            android:enabled="true">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
@@ -3154,7 +3162,7 @@
             android:label="@string/force_rtl_layout_all_locales"
             android:icon="@drawable/tile_icon_force_rtl"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:enabled="false">
+            android:enabled="true">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
@@ -3164,7 +3172,7 @@
             android:label="@string/window_animation_scale_title"
             android:icon="@drawable/tile_icon_animation_speed"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:enabled="false">
+            android:enabled="true">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>

@@ -87,6 +87,9 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
         @Override
         public void onCallStateChanged(int state, String incomingNumber) {
             final SettingsActivity activity = (SettingsActivity) getActivity();
+            if (activity == null) {
+                return;
+            }
             boolean isNonTtyOrTtyOnVolteEnabled = ImsManager
                     .isNonTtyOrTtyOnVolteEnabled(activity);
             final SwitchBar switchBar = activity.getSwitchBar();
@@ -192,9 +195,6 @@ public class WifiCallingSettings extends SettingsPreferenceFragment
                 // In order to communicate to ImsPhone that it should
                 // not show notification, we are changing result code here.
                 setResultCode(Activity.RESULT_CANCELED);
-
-                // UX requirement is to disable WFC in case of "permanent" registration failures.
-                mSwitch.setChecked(false);
 
                 showAlert(intent);
             }

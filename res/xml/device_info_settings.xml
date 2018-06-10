@@ -16,6 +16,11 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
         android:title="@string/about_settings">
+   
+   <PreferenceScreen 
+		android:key="bliss_logo"
+                android:enabled="false"
+                android:layout="@layout/bliss_logo_row" />
 
         <!-- System update settings - launches activity -->
         <Preference android:key="additional_system_update_settings"
@@ -39,16 +44,16 @@
         </Preference>
 
         <!-- Legal Information -->
-        <Preference
+        <!--Preference
                 android:key="legal_container"
                 android:title="@string/legal_information"
-                android:fragment="com.android.settings.LegalSettings" />
+                android:fragment="com.android.settings.LegalSettings" /-->
 
-        <Preference
+        <!--Preference
                 android:key="regulatory_info"
                 android:title="@string/regulatory_labels">
             <intent android:action="android.settings.SHOW_REGULATORY_INFO" />
-        </Preference>
+        </Preference-->
 
         <Preference
                 android:key="safety_info"
@@ -84,6 +89,12 @@
                 android:key="fcc_equipment_id"
                 android:title="@string/fcc_equipment_id"
                 android:summary="@string/summary_placeholder"/>
+
+        <!-- Bliss Version -->
+        <Preference 
+		android:key="bliss_version"
+                android:title="@string/bliss_version"
+                android:summary="@string/bliss_version_default" />
 
         <!-- Device Baseband version -->
         <Preference

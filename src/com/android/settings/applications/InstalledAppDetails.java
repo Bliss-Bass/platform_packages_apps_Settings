@@ -39,6 +39,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ResolveInfo;
 import android.content.pm.UserInfo;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.icu.text.ListFormatter;
 import android.net.INetworkStatsService;
 import android.net.INetworkStatsSession;
@@ -126,11 +127,12 @@ public class InstalledAppDetails extends AppInfoBase
         implements View.OnClickListener, OnPreferenceClickListener,
         LoaderManager.LoaderCallbacks<AppStorageStats> {
 
-    private static final String LOG_TAG = "InstalledAppDetails";
+    //private static final String LOG_TAG = "InstalledAppDetails";
 
     // Menu identifiers
     public static final int UNINSTALL_ALL_USERS_MENU = 1;
     public static final int UNINSTALL_UPDATES = 2;
+    public static final int PLAY_STORE = 3;
 
     // Result code identifiers
     public static final int REQUEST_UNINSTALL = 0;
@@ -158,6 +160,7 @@ public class InstalledAppDetails extends AppInfoBase
     private static final String KEY_BATTERY = "battery";
     private static final String KEY_MEMORY = "memory";
     private static final String KEY_VERSION = "app_version";
+    private static final String KEY_PACKAGE_NAME = "app_package_name";
     private static final String KEY_INSTANT_APP_SUPPORTED_LINKS =
             "instant_app_launch_supported_domain_urls";
 
@@ -177,6 +180,7 @@ public class InstalledAppDetails extends AppInfoBase
     private Preference mDataPreference;
     private Preference mMemoryPreference;
     private Preference mVersionPreference;
+    private Preference mPackageNamePreference;
     private AppDomainsPreference mInstantAppDomainsPreference;
     private DevelopmentSettingsEnabler mDevelopmentSettingsEnabler;
     private boolean mDisableAfterUninstall;
@@ -458,6 +462,7 @@ public class InstalledAppDetails extends AppInfoBase
         mMemoryPreference.setOnPreferenceClickListener(this);
         mMemoryPreference.setVisible(mDevelopmentSettingsEnabler.getLastEnabledState());
         mVersionPreference = findPreference(KEY_VERSION);
+        mPackageNamePreference = findPreference(KEY_PACKAGE_NAME);
         mInstantAppDomainsPreference =
                 (AppDomainsPreference) findPreference(KEY_INSTANT_APP_SUPPORTED_LINKS);
         mLaunchPreference = findPreference(KEY_LAUNCH);
@@ -476,7 +481,7 @@ public class InstalledAppDetails extends AppInfoBase
     @Override
     public void onPackageSizeChanged(String packageName) {
         if (!TextUtils.equals(packageName, mPackageName)) {
-            Log.d(LOG_TAG, "Package change irrelevant, skipping");
+            //Log.d(LOG_TAG, "Package change irrelevant, skipping");
           return;
         }
         refreshUi();
@@ -492,7 +497,7 @@ public class InstalledAppDetails extends AppInfoBase
     boolean ensurePackageInfoAvailable(Activity activity) {
         if (mPackageInfo == null) {
             mFinishing = true;
-            Log.w(LOG_TAG, "Package info not available. Is this package already uninstalled?");
+            //Log.w(LOG_TAG, "Package info not available. Is this package already uninstalled?");
             activity.finishAndRemoveTask();
             return false;
         }
@@ -508,6 +513,9 @@ public class InstalledAppDetails extends AppInfoBase
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.add(0, PLAY_STORE, 0, R.string.app_play_store)
+                .setIcon(R.drawable.ic_menu_play_store)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         menu.add(0, UNINSTALL_UPDATES, 0, R.string.app_factory_reset)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
         menu.add(0, UNINSTALL_ALL_USERS_MENU, 1, R.string.uninstall_all_users_text)
@@ -527,6 +535,10 @@ public class InstalledAppDetails extends AppInfoBase
             RestrictedLockUtils.setMenuItemAsDisabledByAdmin(getActivity(),
                     uninstallUpdatesItem, mAppsControlDisallowedAdmin);
         }
+        // Utils.isSystemPackage doesn't include all aosp built apps, like Contacts etc. Add them
+        // and grab the Google Play Store itself (com.android.vending) in the process
+        menu.findItem(PLAY_STORE).setVisible(!Utils.isSystemPackage(getContext().getResources(), mPm, mPackageInfo)
+                && !isAospOrStore(mAppEntry.info.packageName));
     }
 
     @Override
@@ -537,6 +549,9 @@ public class InstalledAppDetails extends AppInfoBase
                 return true;
             case UNINSTALL_UPDATES:
                 uninstallPkg(mAppEntry.info.packageName, false, false);
+                return true;
+            case PLAY_STORE:
+                openPlayStore(mAppEntry.info.packageName);
                 return true;
         }
         return false;
@@ -619,6 +634,7 @@ public class InstalledAppDetails extends AppInfoBase
                 .done(activity, false /* rebindActions */);
         mVersionPreference.setSummary(getString(R.string.version_text,
                 BidiFormatter.getInstance().unicodeWrap(pkgInfo.versionName)));
+        mPackageNamePreference.setSummary(pkgInfo.packageName);
     }
 
     @VisibleForTesting
@@ -860,6 +876,18 @@ public class InstalledAppDetails extends AppInfoBase
         return null;
     }
 
+    private void openPlayStore(String packageName) {
+        // Launch an intent to the play store entry
+        String playURL = "https://play.google.com/store/apps/details?id=" + packageName;
+        Intent i = new Intent(Intent.ACTION_VIEW);
+        i.setData(Uri.parse(playURL));
+        startActivity(i);
+    }
+
+    private boolean isAospOrStore(String packageName) {
+        return packageName.contains("com.android");
+    }
+
     private void uninstallPkg(String packageName, boolean allUsers, boolean andDisable) {
         stopListeningToPackageRemove();
          // Create new intent to launch Uninstaller activity
@@ -876,7 +904,7 @@ public class InstalledAppDetails extends AppInfoBase
         mMetricsFeatureProvider.action(getContext(), MetricsEvent.ACTION_APP_FORCE_STOP, pkgName);
         ActivityManager am = (ActivityManager) getActivity().getSystemService(
                 Context.ACTIVITY_SERVICE);
-        Log.d(LOG_TAG, "Stopping package " + pkgName);
+        //Log.d(LOG_TAG, "Stopping package " + pkgName);
         am.forceStopPackage(pkgName);
         int userId = UserHandle.getUserId(mAppEntry.info.uid);
         mState.invalidatePackage(pkgName, userId);
@@ -898,9 +926,12 @@ public class InstalledAppDetails extends AppInfoBase
 
     @VisibleForTesting
     void checkForceStop() {
+        if (getActivity() == null || getActivity().isFinishing()) {
+            return;
+        }
         if (mDpm.packageHasActiveAdmins(mPackageInfo.packageName)) {
             // User can't force stop device admin.
-            Log.w(LOG_TAG, "User can't force stop device admin");
+            //Log.w(LOG_TAG, "User can't force stop device admin");
             updateForceStopButton(false);
         } else if (AppUtils.isInstant(mPackageInfo.applicationInfo)) {
             updateForceStopButton(false);
@@ -908,7 +939,7 @@ public class InstalledAppDetails extends AppInfoBase
         } else if ((mAppEntry.info.flags & ApplicationInfo.FLAG_STOPPED) == 0) {
             // If the app isn't explicitly stopped, then always show the
             // force stop button.
-            Log.w(LOG_TAG, "App is not explicitly stopped");
+            //Log.w(LOG_TAG, "App is not explicitly stopped");
             updateForceStopButton(true);
         } else {
             Intent intent = new Intent(Intent.ACTION_QUERY_PACKAGE_RESTART,
@@ -916,8 +947,8 @@ public class InstalledAppDetails extends AppInfoBase
             intent.putExtra(Intent.EXTRA_PACKAGES, new String[] { mAppEntry.info.packageName });
             intent.putExtra(Intent.EXTRA_UID, mAppEntry.info.uid);
             intent.putExtra(Intent.EXTRA_USER_HANDLE, UserHandle.getUserId(mAppEntry.info.uid));
-            Log.d(LOG_TAG, "Sending broadcast to query restart status for "
-                    + mAppEntry.info.packageName);
+            //Log.d(LOG_TAG, "Sending broadcast to query restart status for "
+            //        + mAppEntry.info.packageName);
             getActivity().sendOrderedBroadcastAsUser(intent, UserHandle.CURRENT, null,
                     mCheckKillProcessesReceiver, null, Activity.RESULT_CANCELED, null, null);
         }
@@ -931,7 +962,7 @@ public class InstalledAppDetails extends AppInfoBase
         try {
             getActivity().startActivityForResult(intent, SUB_INFO_FRAGMENT);
         } catch (ActivityNotFoundException e) {
-            Log.w(LOG_TAG, "No app can handle android.intent.action.MANAGE_APP_PERMISSIONS");
+            //Log.w(LOG_TAG, "No app can handle android.intent.action.MANAGE_APP_PERMISSIONS");
         }
     }
 
@@ -1093,7 +1124,7 @@ public class InstalledAppDetails extends AppInfoBase
             packageInfoWithActivities = mPm.getPackageInfoAsUser(mPackageName,
                     PackageManager.GET_ACTIVITIES, UserHandle.myUserId());
         } catch (NameNotFoundException e) {
-            Log.e(TAG, "Exception while retrieving the package info of " + mPackageName, e);
+            //Log.e(TAG, "Exception while retrieving the package info of " + mPackageName, e);
         }
 
         boolean hasDrawOverOtherApps = hasPermission(permission.SYSTEM_ALERT_WINDOW);
@@ -1381,7 +1412,7 @@ public class InstalledAppDetails extends AppInfoBase
                         count++;
                     }
                 } catch(NameNotFoundException e) {
-                    Log.e(TAG, "Package: " + packageName + " not found for user: " + userInfo.id);
+                    //Log.e(TAG, "Package: " + packageName + " not found for user: " + userInfo.id);
                 }
             }
 
@@ -1406,6 +1437,13 @@ public class InstalledAppDetails extends AppInfoBase
         protected Object doInBackground(Object... params) {
             mPm.setApplicationEnabledSetting(mInfo.packageName, mState, 0);
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Object o) {
+            if (mActivity.get() !=  null) {
+                mActivity.get().refreshUi();
+            }
         }
     }
 
@@ -1432,9 +1470,10 @@ public class InstalledAppDetails extends AppInfoBase
         @Override
         public void onReceive(Context context, Intent intent) {
             final boolean enabled = getResultCode() != Activity.RESULT_CANCELED;
-            Log.d(LOG_TAG, "Got broadcast response: Restart status for "
-                    + mAppEntry.info.packageName + " " + enabled);
+            //Log.d(LOG_TAG, "Got broadcast response: Restart status for "
+            //        + mAppEntry.info.packageName + " " + enabled);
             updateForceStopButton(enabled);
+            refreshUi();
         }
     };
 

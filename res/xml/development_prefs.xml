@@ -85,9 +85,9 @@
         android:title="@string/color_temperature"
         android:summary="@string/color_temperature_desc" />
 
-    <SwitchPreference
+    <!--SwitchPreference
         android:key="ota_disable_automatic_update"
-        android:title="@string/ota_disable_automatic_update" />
+        android:title="@string/ota_disable_automatic_update" /-->
 
     <Preference
         android:key="demo_mode"
@@ -166,6 +166,15 @@
         <SwitchPreference
             android:key="camera_laser_sensor_switch"
             android:title="@string/camera_laser_sensor_switch" />
+
+        <SwitchPreference
+            android:key="camera_hal_hdrplus_switch"
+            android:title="@string/camera_hal_hdrplus_switch" />
+
+        <SwitchPreference
+            android:key="force_authorize_substratum_packages"
+            android:title="@string/force_authorize_substratum_packages_title"
+            android:summary="@string/force_authorize_substratum_packages_summary" />
 
     </PreferenceCategory>
 
@@ -324,10 +333,6 @@
             android:title="@string/overlay_display_devices_title"
             android:entries="@array/overlay_display_devices_entries"
             android:entryValues="@array/overlay_display_devices_values" />
-
-        <com.android.settings.display.DensityPreference
-            android:key="density"
-            android:title="@string/developer_smallest_width" />
 
     </PreferenceCategory>
 
